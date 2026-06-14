@@ -1,0 +1,296 @@
+#!/usr/bin/env bash
+# didio-config-lib.sh — shared config library for claude-didio-config
+#
+# Source this file (do NOT execute it directly):
+#   source "${DIDIO_HOME}/bin/didio-config-lib.sh"
+#
+# Reads configuration from didio.config.json (project root first, then
+# DIDIO_HOME fallback). All functions use python3 for JSON parsing (already
+# a dependency of the framework).
+
+# Locate the config file: project root first, then global fallback.
+didio_find_config() {
+  local project="${PROJECT_ROOT:-$(pwd)}"
+  if [[ -f "$project/didio.config.json" ]]; then
+    echo "$project/didio.config.json"
+  elif [[ -f "${DIDIO_HOME:-$HOME/.claude-didio-config}/didio.config.json" ]]; then
+    echo "${DIDIO_HOME:-$HOME/.claude-didio-config}/didio.config.json"
+  else
+    echo ""
+  fi
+}
+
+# Read a top-level key from config. Returns empty string if not found.
+didio_read_config() {
+  local key="$1"
+  local config
+  config="$(didio_find_config)"
+  [[ -z "$config" ]] && return 0
+  python3 -c "
+import json, sys
+with open('$config') as f:
+    c = json.load(f)
+v = c.get('$key', '')
+if isinstance(v, bool):
+    print('true' if v else 'false')
+elif isinstance(v, (dict, list)):
+    print(json.dumps(v))
+else:
+    print(v)
+" 2>/dev/null || true
+}
+
+# Write a top-level key to the project config file.
+didio_write_config() {
+  local key="$1"
+  local value="$2"
+  local project="${PROJECT_ROOT:-$(pwd)}"
+  local config="$project/didio.config.json"
+
+  if [[ ! -f "$config" ]]; then
+    cp "${DIDIO_HOME:-$HOME/.claude-didio-config}/templates/didio.config.json" "$config" 2>/dev/null || \
+    echo '{}' > "$config"
+  fi
+
+  python3 -c "
+import json, sys
+path, key, raw = '$config', '$key', '$value'
+with open(path) as f:
+    c = json.load(f)
+# Detect type: bool, int, or string
+if raw in ('true', 'false'):
+    c[key] = raw == 'true'
+elif raw.isdigit():
+    c[key] = int(raw)
+else:
+    c[key] = raw
+with open(path, 'w') as f:
+    json.dump(c, f, indent=2)
+    f.write('\n')
+" 2>/dev/null
+}
+
+# Returns the --model value for a given role, respecting economy mode.
+didio_model_for_role() {
+  local role="$1"
+  local config
+  config="$(didio_find_config)"
+  [[ -z "$config" ]] && return 0
+  python3 -c "
+import json
+with open('$config') as f:
+    c = json.load(f)
+economy = c.get('economy', False)
+key = 'models_economy' if economy else 'models'
+models = c.get(key, c.get('models', {}))
+role_cfg = models.get('$role', {})
+print(role_cfg.get('model', ''))
+" 2>/dev/null || true
+}
+
+# Returns the --fallback-model value for a given role, respecting economy mode.
+didio_fallback_for_role() {
+  local role="$1"
+  local config
+  config="$(didio_find_config)"
+  [[ -z "$config" ]] && return 0
+  python3 -c "
+import json
+with open('$config') as f:
+    c = json.load(f)
+economy = c.get('economy', False)
+key = 'models_economy' if economy else 'models'
+models = c.get(key, c.get('models', {}))
+role_cfg = models.get('$role', {})
+print(role_cfg.get('fallback', ''))
+" 2>/dev/null || true
+}
+
+# Returns the --effort value for a given role, respecting economy mode.
+# Empty when unset (callers must not pass --effort in that case).
+didio_effort_for_role() {
+  local role="$1"
+  local config
+  config="$(didio_find_config)"
+  [[ -z "$config" ]] && return 0
+  python3 -c "
+import json
+with open('$config') as f:
+    c = json.load(f)
+economy = c.get('economy', False)
+key = 'models_economy' if economy else 'models'
+models = c.get(key, c.get('models', {}))
+role_cfg = models.get('$role', {})
+print(role_cfg.get('effort', ''))
+" 2>/dev/null || true
+}
+
+# Returns the execution provider for a given role, respecting economy mode.
+# Default 'claude' when the role has no 'provider' key (AC3: unchanged
+# behavior for roles that never opted into a different provider).
+didio_provider_for_role() {
+  local role="$1"
+  local config
+  config="$(didio_find_config)"
+  [[ -z "$config" ]] && echo "claude" && return 0
+  python3 -c "
+import json
+with open('$config') as f:
+    c = json.load(f)
+economy = c.get('economy', False)
+key = 'models_economy' if economy else 'models'
+models = c.get(key, c.get('models', {}))
+role_cfg = models.get('$role', {})
+print(role_cfg.get('provider', 'claude'))
+" 2>/dev/null || echo "claude"
+}
+
+# Returns the executable name for a given provider, from the top-level
+# 'providers' registry. Falls back to the provider name itself when the
+# provider is unknown/unregistered.
+didio_provider_bin() {
+  local provider="$1"
+  local config
+  config="$(didio_find_config)"
+  [[ -z "$config" ]] && echo "$provider" && return 0
+  python3 -c "
+import json
+with open('$config') as f:
+    c = json.load(f)
+providers = c.get('providers', {})
+provider_cfg = providers.get('$provider', {})
+print(provider_cfg.get('bin', '$provider'))
+" 2>/dev/null || echo "$provider"
+}
+
+# Returns the provider-correct model id for a role. The model id is already
+# provider-namespaced in config (e.g. 'sonnet' for claude, 'gpt-5-codex' for
+# codex); this is a back-compat-friendly name so callers don't assume Claude
+# tiers. didio_model_for_role remains the canonical/back-compat alias.
+didio_provider_model_for_role() {
+  didio_model_for_role "$1"
+}
+
+# Returns max parallel agents. Turbo mode overrides to 0 (unlimited).
+didio_max_parallel() {
+  local config
+  config="$(didio_find_config)"
+  [[ -z "$config" ]] && echo "0" && return 0
+  python3 -c "
+import json
+with open('$config') as f:
+    c = json.load(f)
+turbo = c.get('turbo', False)
+if turbo:
+    print(0)
+else:
+    print(c.get('max_parallel', 0))
+" 2>/dev/null || echo "0"
+}
+
+# Returns "true" or "false".
+didio_is_turbo() {
+  local val
+  val="$(didio_read_config turbo)"
+  echo "${val:-false}"
+}
+
+# Returns "true" or "false".
+didio_is_economy() {
+  local val
+  val="$(didio_read_config economy)"
+  echo "${val:-false}"
+}
+
+# Returns "true" or "false".
+didio_is_highlander() {
+  local val
+  val="$(didio_read_config highlander)"
+  echo "${val:-false}"
+}
+
+# Returns "true" or "false". Default false (conservative: opt-in).
+didio_second_brain_enabled() {
+  local config
+  config="$(didio_find_config)"
+  [[ -z "$config" ]] && echo "false" && return 0
+  python3 -c "
+import json
+with open('$config') as f: c = json.load(f)
+sb = c.get('second_brain', {})
+print('true' if sb.get('enabled', False) else 'false')
+" 2>/dev/null || echo "false"
+}
+
+# Returns "true" or "false". Default true (if the config section exists but
+# the key is missing, assume fallback is safe).
+didio_second_brain_fallback() {
+  local config
+  config="$(didio_find_config)"
+  [[ -z "$config" ]] && echo "true" && return 0
+  python3 -c "
+import json
+with open('$config') as f: c = json.load(f)
+sb = c.get('second_brain', {})
+print('true' if sb.get('fallback_to_local', True) else 'false')
+" 2>/dev/null || echo "true"
+}
+
+# Print a summary of current config (for menu display).
+didio_config_summary() {
+  local config
+  config="$(didio_find_config)"
+  if [[ -z "$config" ]]; then
+    echo "  [nenhum didio.config.json encontrado]"
+    return
+  fi
+  python3 -c "
+import json
+with open('$config') as f:
+    c = json.load(f)
+
+badges = []
+if c.get('turbo', False): badges.append('TURBO')
+if c.get('economy', False): badges.append('ECONOMY')
+if c.get('highlander', False): badges.append('HIGHLANDER')
+
+economy = c.get('economy', False)
+key = 'models_economy' if economy else 'models'
+models = c.get(key, c.get('models', {}))
+mp = 0 if c.get('turbo', False) else c.get('max_parallel', 0)
+
+badge_str = ' '.join(f'[{b}]' for b in badges) if badges else '[STANDARD]'
+mp_str = 'ilimitado' if mp == 0 else str(mp)
+
+print(f'  Modo: {badge_str}')
+print(f'  Paralelismo max: {mp_str}')
+for role in ['architect', 'developer', 'techlead', 'qa']:
+    m = models.get(role, {})
+    print(f'    {role:10} -> {m.get(\"model\", \"?\")} (fallback: {m.get(\"fallback\", \"?\")})')
+" 2>/dev/null || echo "  [erro lendo config]"
+}
+
+# Resolve the feature directory for a given feature ID.
+# Prints the path to stdout; returns 1 if not found.
+didio_find_feature_dir() {
+  local feature="${1:?feature-id required (e.g. F01)}"
+  local project="${PROJECT_ROOT:-$(pwd)}"
+  local match
+  match=$(find "$project/tasks/features" -maxdepth 1 -type d -name "${feature}-*" 2>/dev/null | head -n1)
+  if [[ -n "$match" ]]; then
+    echo "$match"
+    return 0
+  fi
+  return 1
+}
+
+# Recommended parallelism for a model tier.
+didio_recommend_parallel() {
+  local model="${1:-sonnet}"
+  case "$model" in
+    opus*)  echo "3-4 (modelo pesado, alto custo)" ;;
+    sonnet*) echo "5-8 (equilibrio custo/qualidade)" ;;
+    haiku*) echo "8-12 (leve e rapido)" ;;
+    *)      echo "5-8 (padrao)" ;;
+  esac
+}

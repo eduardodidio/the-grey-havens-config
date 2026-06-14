@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(didio:*)",
+      "Bash(didio-spawn-agent*)",
+      "Bash(didio-run-wave*)",
+      "Bash(didio-dashboard*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git init:*)",
+      "Bash(git -c user.name=*)",
+      "Bash(mkdir -p:*)",
+      "Bash(cp -r:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run *)",
+      "Bash(curl:*)",
+      "Read(./**)",
+      "Write(tasks/**)",
+      "Write(docs/**)",
+      "Write(logs/**)",
+      "Edit(./**)",
+      "WebSearch",
+      "WebFetch",
+      "AskUserQuestion"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${DIDIO_HOME:-$HOME/.claude-didio-config}/patterns/hooks/feature-end-digest/hook.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${DIDIO_SECOND_BRAIN_HOME:-$HOME/didio-second-brain-claude}/patterns/hooks/stop-session-summary/hook.sh"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${DIDIO_SECOND_BRAIN_HOME:-$HOME/didio-second-brain-claude}/patterns/hooks/stop-session-summary/hook.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${DIDIO_HOME:-$HOME/.claude-didio-config}/bin/hooks/didio-pre-tool.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${DIDIO_HOME:-$HOME/.claude-didio-config}/bin/hooks/didio-post-tool.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

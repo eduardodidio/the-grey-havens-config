@@ -1,0 +1,6 @@
+{"type":"item.completed","item":{"type":"reasoning","text":"Thinking about the task."}}
+{"type":"item.completed","item":{"type":"agent_message","text":"Let me check that file."}}
+{"type":"item.completed","item":{"type":"command_execution","command":"cat /tmp/a.txt","status":"completed","exit_code":0,"text":"file contents"}}
+{"type":"item.completed","item":{"type":"command_execution","command":"cat /tmp/missing.txt","status":"failed","exit_code":1,"text":"ENOENT: no such file"}}
+{"type":"token_count","info":{"input_tokens":120,"output_tokens":40}}
+{"type":"turn.completed"}

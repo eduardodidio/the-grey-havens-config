@@ -1,0 +1,6 @@
+{"type":"system","subtype":"init","cwd":"/tmp"}
+{"type":"assistant","message":{"content":[{"type":"text","text":"Let me check that file."}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/tmp/a.txt"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","is_error":false,"content":"file contents"}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","is_error":true,"content":"ENOENT: no such file"}]}}
+{"type":"result","is_error":false,"result":"Done.","usage":{"input_tokens":100,"output_tokens":50}}

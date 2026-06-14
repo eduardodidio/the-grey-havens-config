@@ -1,0 +1,15 @@
+logs/agents/*.jsonl
+logs/agents/*.meta.json
+logs/agents/state.json
+
+# transient agent run artifacts
+logs/agents/*.checkpoint.json
+logs/agents/*.ckpt.at
+logs/agents/meta-metrics.json
+logs/agents/_pending/
+logs/*.log
+logs/*.sh
+logs/session-budget.json
+logs/session-paused.json*
+__pycache__/
+*.pyc
