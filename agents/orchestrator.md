@@ -3,6 +3,23 @@
 Coordinates the 4 agents (Architect → Developer → TechLead → QA) for the
 claude-didio-config framework.
 
+## Architecture — Where orchestration lives
+
+### Repo Scripts vs. Global Install
+
+This repo ships **only** the agent launchers in `bin/`:
+- `didio spawn-agent` (via `bin/didio-spawn-agent.sh`) — launches a single agent in a clean bash context
+- `didio-config-lib.sh` — resolves model/provider for each role
+- `didio-events-lib.py` — event normalizer (Claude vs. OpenAI drivers)
+
+**Wave orchestration, checkpoint/resume, and gates live in the global `didio` CLI install** (`~/.claude-didio-config/bin/`):
+- `didio run-wave <FXX> <N> <role>` — runs all tasks in a Wave in parallel, enforces test gate, writes checkpoint/resume artifacts
+- `didio dashboard` — visual task status
+- `didio compile-skills`, `didio providers`, `didio archive`, `didio sync` — framework utilities
+- `didio t800` (Gandalf), `didio t1000` (Saruman) — meta-agents for strategic decision-making and governance
+
+When docs reference `didio run-wave` or other global commands, they are **provided by the installed `didio` CLI**, not by scripts in this repo. This boundary is intentional: the repo is stateless; the global install handles state (checkpoint files, dashboards, logs).
+
 ## Core principle
 
 **Every agent runs in a new, clean bash process via `didio spawn-agent`.**

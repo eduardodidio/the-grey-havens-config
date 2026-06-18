@@ -13,3 +13,11 @@ logs/session-budget.json
 logs/session-paused.json*
 __pycache__/
 *.pyc
+
+# secrets and credentials
+.env
+.env.*
+credentials.*
+*.pem
+*.key
+*.p12

@@ -26,18 +26,19 @@ didio_read_config() {
   local config
   config="$(didio_find_config)"
   [[ -z "$config" ]] && return 0
-  python3 -c "
+  python3 - "$config" "$key" <<'PY' 2>/dev/null || true
 import json, sys
-with open('$config') as f:
+config_path, key = sys.argv[1], sys.argv[2]
+with open(config_path) as f:
     c = json.load(f)
-v = c.get('$key', '')
+v = c.get(key, '')
 if isinstance(v, bool):
     print('true' if v else 'false')
 elif isinstance(v, (dict, list)):
     print(json.dumps(v))
 else:
     print(v)
-" 2>/dev/null || true
+PY
 }
 
 # Write a top-level key to the project config file.
@@ -52,12 +53,11 @@ didio_write_config() {
     echo '{}' > "$config"
   fi
 
-  python3 -c "
+  python3 - "$config" "$key" "$value" <<'PY' 2>/dev/null
 import json, sys
-path, key, raw = '$config', '$key', '$value'
+path, key, raw = sys.argv[1], sys.argv[2], sys.argv[3]
 with open(path) as f:
     c = json.load(f)
-# Detect type: bool, int, or string
 if raw in ('true', 'false'):
     c[key] = raw == 'true'
 elif raw.isdigit():
@@ -67,7 +67,7 @@ else:
 with open(path, 'w') as f:
     json.dump(c, f, indent=2)
     f.write('\n')
-" 2>/dev/null
+PY
 }
 
 # Returns the --model value for a given role, respecting economy mode.
@@ -76,16 +76,17 @@ didio_model_for_role() {
   local config
   config="$(didio_find_config)"
   [[ -z "$config" ]] && return 0
-  python3 -c "
-import json
-with open('$config') as f:
+  python3 - "$config" "$role" <<'PY' 2>/dev/null || true
+import json, sys
+config_path, role = sys.argv[1], sys.argv[2]
+with open(config_path) as f:
     c = json.load(f)
 economy = c.get('economy', False)
 key = 'models_economy' if economy else 'models'
 models = c.get(key, c.get('models', {}))
-role_cfg = models.get('$role', {})
+role_cfg = models.get(role, {})
 print(role_cfg.get('model', ''))
-" 2>/dev/null || true
+PY
 }
 
 # Returns the --fallback-model value for a given role, respecting economy mode.
@@ -94,16 +95,17 @@ didio_fallback_for_role() {
   local config
   config="$(didio_find_config)"
   [[ -z "$config" ]] && return 0
-  python3 -c "
-import json
-with open('$config') as f:
+  python3 - "$config" "$role" <<'PY' 2>/dev/null || true
+import json, sys
+config_path, role = sys.argv[1], sys.argv[2]
+with open(config_path) as f:
     c = json.load(f)
 economy = c.get('economy', False)
 key = 'models_economy' if economy else 'models'
 models = c.get(key, c.get('models', {}))
-role_cfg = models.get('$role', {})
+role_cfg = models.get(role, {})
 print(role_cfg.get('fallback', ''))
-" 2>/dev/null || true
+PY
 }
 
 # Returns the --effort value for a given role, respecting economy mode.
@@ -113,16 +115,17 @@ didio_effort_for_role() {
   local config
   config="$(didio_find_config)"
   [[ -z "$config" ]] && return 0
-  python3 -c "
-import json
-with open('$config') as f:
+  python3 - "$config" "$role" <<'PY' 2>/dev/null || true
+import json, sys
+config_path, role = sys.argv[1], sys.argv[2]
+with open(config_path) as f:
     c = json.load(f)
 economy = c.get('economy', False)
 key = 'models_economy' if economy else 'models'
 models = c.get(key, c.get('models', {}))
-role_cfg = models.get('$role', {})
+role_cfg = models.get(role, {})
 print(role_cfg.get('effort', ''))
-" 2>/dev/null || true
+PY
 }
 
 # Returns the execution provider for a given role, respecting economy mode.
@@ -133,16 +136,17 @@ didio_provider_for_role() {
   local config
   config="$(didio_find_config)"
   [[ -z "$config" ]] && echo "claude" && return 0
-  python3 -c "
-import json
-with open('$config') as f:
+  python3 - "$config" "$role" <<'PY' 2>/dev/null || echo "claude"
+import json, sys
+config_path, role = sys.argv[1], sys.argv[2]
+with open(config_path) as f:
     c = json.load(f)
 economy = c.get('economy', False)
 key = 'models_economy' if economy else 'models'
 models = c.get(key, c.get('models', {}))
-role_cfg = models.get('$role', {})
+role_cfg = models.get(role, {})
 print(role_cfg.get('provider', 'claude'))
-" 2>/dev/null || echo "claude"
+PY
 }
 
 # Returns the executable name for a given provider, from the top-level
@@ -153,14 +157,15 @@ didio_provider_bin() {
   local config
   config="$(didio_find_config)"
   [[ -z "$config" ]] && echo "$provider" && return 0
-  python3 -c "
-import json
-with open('$config') as f:
+  python3 - "$config" "$provider" <<'PY' 2>/dev/null || echo "$provider"
+import json, sys
+config_path, provider = sys.argv[1], sys.argv[2]
+with open(config_path) as f:
     c = json.load(f)
 providers = c.get('providers', {})
-provider_cfg = providers.get('$provider', {})
-print(provider_cfg.get('bin', '$provider'))
-" 2>/dev/null || echo "$provider"
+provider_cfg = providers.get(provider, {})
+print(provider_cfg.get('bin', provider))
+PY
 }
 
 # Returns the provider-correct model id for a role. The model id is already
@@ -176,16 +181,17 @@ didio_max_parallel() {
   local config
   config="$(didio_find_config)"
   [[ -z "$config" ]] && echo "0" && return 0
-  python3 -c "
-import json
-with open('$config') as f:
+  python3 - "$config" <<'PY' 2>/dev/null || echo "0"
+import json, sys
+config_path = sys.argv[1]
+with open(config_path) as f:
     c = json.load(f)
 turbo = c.get('turbo', False)
 if turbo:
     print(0)
 else:
     print(c.get('max_parallel', 0))
-" 2>/dev/null || echo "0"
+PY
 }
 
 # Returns "true" or "false".
@@ -214,12 +220,14 @@ didio_second_brain_enabled() {
   local config
   config="$(didio_find_config)"
   [[ -z "$config" ]] && echo "false" && return 0
-  python3 -c "
-import json
-with open('$config') as f: c = json.load(f)
+  python3 - "$config" <<'PY' 2>/dev/null || echo "false"
+import json, sys
+config_path = sys.argv[1]
+with open(config_path) as f:
+    c = json.load(f)
 sb = c.get('second_brain', {})
 print('true' if sb.get('enabled', False) else 'false')
-" 2>/dev/null || echo "false"
+PY
 }
 
 # Returns "true" or "false". Default true (if the config section exists but
@@ -228,12 +236,14 @@ didio_second_brain_fallback() {
   local config
   config="$(didio_find_config)"
   [[ -z "$config" ]] && echo "true" && return 0
-  python3 -c "
-import json
-with open('$config') as f: c = json.load(f)
+  python3 - "$config" <<'PY' 2>/dev/null || echo "true"
+import json, sys
+config_path = sys.argv[1]
+with open(config_path) as f:
+    c = json.load(f)
 sb = c.get('second_brain', {})
 print('true' if sb.get('fallback_to_local', True) else 'false')
-" 2>/dev/null || echo "true"
+PY
 }
 
 # Print a summary of current config (for menu display).
@@ -244,15 +254,19 @@ didio_config_summary() {
     echo "  [nenhum didio.config.json encontrado]"
     return
   fi
-  python3 -c "
-import json
-with open('$config') as f:
+  python3 - "$config" <<'PY' 2>/dev/null || echo "  [erro lendo config]"
+import json, sys
+config_path = sys.argv[1]
+with open(config_path) as f:
     c = json.load(f)
 
 badges = []
-if c.get('turbo', False): badges.append('TURBO')
-if c.get('economy', False): badges.append('ECONOMY')
-if c.get('highlander', False): badges.append('HIGHLANDER')
+if c.get('turbo', False):
+    badges.append('TURBO')
+if c.get('economy', False):
+    badges.append('ECONOMY')
+if c.get('highlander', False):
+    badges.append('HIGHLANDER')
 
 economy = c.get('economy', False)
 key = 'models_economy' if economy else 'models'
@@ -266,8 +280,8 @@ print(f'  Modo: {badge_str}')
 print(f'  Paralelismo max: {mp_str}')
 for role in ['architect', 'developer', 'techlead', 'qa']:
     m = models.get(role, {})
-    print(f'    {role:10} -> {m.get(\"model\", \"?\")} (fallback: {m.get(\"fallback\", \"?\")})')
-" 2>/dev/null || echo "  [erro lendo config]"
+    print(f'    {role:10} -> {m.get("model", "?")} (fallback: {m.get("fallback", "?")})')
+PY
 }
 
 # Resolve the feature directory for a given feature ID.

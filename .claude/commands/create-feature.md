@@ -51,7 +51,7 @@ If `True`:
 
 2. Run:
    ```bash
-   didio t800 <FXX> logs/decisions/_requests/<FXX>-<timestamp>.md
+   didio t800 <FXX> logs/decisions/_requests/<FXX>-<timestamp>.md  # [global install command - Gandalf meta-agent]
    ```
 
 3. Find the latest decision record in `logs/decisions/D-*.json`.
@@ -89,7 +89,7 @@ the user literally:
 If the answer starts with `s` (or is `sim`/`yes`/`y`), run:
 
 ```bash
-didio spawn-agent narrative-designer <FXX> tasks/features/<FXX>-_tmp-brief.md
+didio spawn-agent narrative-designer <FXX> tasks/features/<FXX>-_tmp-brief.md  # [repo bin script]
 ```
 
 Wait for it to finish. Verify that at least one `.md` file was created
@@ -111,7 +111,7 @@ Write the feature brief to a temporary file
 then run:
 
 ```bash
-didio spawn-agent architect <FXX> tasks/features/<FXX>-_tmp-brief.md
+didio spawn-agent architect <FXX> tasks/features/<FXX>-_tmp-brief.md  # [repo bin script]
 ```
 
 Wait for it to finish. Verify `tasks/features/<FXX>-*/<FXX>-README.md` now
@@ -132,7 +132,7 @@ If the output is `True`, ask the user:
 If the answer starts with `s` (or is `sim`/`yes`/`y`), run:
 
 ```bash
-didio spawn-agent tea <FXX> tasks/features/<FXX>-*/<FXX>-README.md
+didio spawn-agent tea <FXX> tasks/features/<FXX>-*/<FXX>-README.md  # [repo bin script]
 ```
 
 Wait for it to finish. Verify that `tasks/features/<FXX>-*/<FXX>-test-plan.md` was created.
@@ -146,7 +146,7 @@ Parse the Wave manifest from the feature README. For each Wave N (starting
 from 0), run:
 
 ```bash
-didio run-wave <FXX> <N> developer
+didio run-wave <FXX> <N> developer  # [global install command]
 ```
 
 Wait for each Wave to exit before starting the next. If any Wave fails,
@@ -155,7 +155,7 @@ STOP the pipeline and report the failure to the user.
 ## Step 3 — Tech Lead
 
 ```bash
-didio spawn-agent techlead <FXX> tasks/features/<FXX>-*/<FXX>-README.md
+didio spawn-agent techlead <FXX> tasks/features/<FXX>-*/<FXX>-README.md  # [repo bin script]
 ```
 
 If the verdict is `REJECTED`, STOP and report.
@@ -163,7 +163,7 @@ If the verdict is `REJECTED`, STOP and report.
 ## Step 4 — QA
 
 ```bash
-didio spawn-agent qa <FXX> tasks/features/<FXX>-*/<FXX>-README.md
+didio spawn-agent qa <FXX> tasks/features/<FXX>-*/<FXX>-README.md  # [repo bin script]
 ```
 
 ## Step 5 — Final report

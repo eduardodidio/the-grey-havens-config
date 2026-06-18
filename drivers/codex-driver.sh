@@ -25,9 +25,31 @@
 #
 # The prompt is passed via stdin (not as a positional arg) because prompts
 # may be large/multiline.
+#
+# Dry-run mode: when DIDIO_DRIVER_DRYRUN is set (non-empty), the driver
+# prints the resolved command as NDJSON and exits 0 without invoking codex.
+# Default (unset): normal behavior (no observable change to real invocation).
 
 set -uo pipefail
 
+# Build the command line for introspection and dry-run logging
+CMD_PARTS=(
+  codex exec
+  --json
+  --yolo
+)
+[[ -n "${DIDIO_MODEL:-}" ]] && CMD_PARTS+=(--model "$DIDIO_MODEL")
+
+if [[ -n "${DIDIO_DRIVER_DRYRUN:-}" ]]; then
+  # Dry-run: print the command and exit without invoking codex
+  # (note: prompt passed via stdin not represented in command string)
+  CMD_STR="${CMD_PARTS[*]}"
+  printf '{"type":"system","subtype":"driver-dryrun","provider":"codex","command":"%s","prompt_size":%d}\n' \
+    "${CMD_STR//\"/\\\"}" "${#DIDIO_PROMPT}" >> "$DIDIO_LOG_FILE"
+  exit 0
+fi
+
+# Normal mode: invoke the command and capture exit code
 set +e
 codex exec \
   --json \

@@ -71,22 +71,32 @@ if [[ ! -x "$DRIVER" ]]; then
   exit 2
 fi
 
-# Meta header for dashboard consumption
-cat > "$META_FILE" <<EOF
-{
-  "feature": "$FEATURE",
-  "role": "$ROLE",
-  "task": "$TASK_ID",
-  "task_file": "$TASK_FILE",
-  "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "log": "$LOG_FILE",
-  "status": "running",
-  "pid": $$,
-  "model": "${AGENT_MODEL:-default}",
-  "fallback_model": "${AGENT_FALLBACK:-none}",
-  "provider": "$PROVIDER"
+# Meta header for dashboard consumption — built via python3/json.dump so that
+# task ids or paths containing quotes or newlines can't produce invalid JSON.
+python3 - "$META_FILE" "$FEATURE" "$ROLE" "$TASK_ID" "$TASK_FILE" \
+  "$LOG_FILE" "$$" "${AGENT_MODEL:-default}" "${AGENT_FALLBACK:-none}" \
+  "$PROVIDER" <<'PY'
+import json, sys
+from datetime import datetime, timezone
+(path, feature, role, task, task_file,
+ log, pid, model, fallback, provider) = sys.argv[1:11]
+m = {
+    "feature": feature,
+    "role": role,
+    "task": task,
+    "task_file": task_file,
+    "started_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "log": log,
+    "status": "running",
+    "pid": int(pid),
+    "model": model,
+    "fallback_model": fallback,
+    "provider": provider,
 }
-EOF
+with open(path, "w") as f:
+    json.dump(m, f, indent=2)
+    f.write("\n")
+PY
 
 # Compose the prompt: role instructions + task body + optional extra
 ROLE_PROMPT="$(cat "$PROMPT_FILE")"

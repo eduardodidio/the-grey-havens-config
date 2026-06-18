@@ -1,0 +1,40 @@
+%% F02 — Framework hardening architecture (component / data-flow).
+%% Living doc — keep in sync with bin/didio-config-lib.sh, bin/didio-spawn-agent.sh,
+%% drivers/DRIVER_CONTRACT.md, drivers/*.sh, tests/run.sh, tests/lib/sim-harness.sh.
+
+flowchart LR
+    subgraph Repo["Repo (in-tree)"]
+        CONF["didio.config.json"]
+        CFG["didio-config-lib.sh<br/>(argv / heredoc — no -c injection)"]
+        SPAWN["didio-spawn-agent.sh<br/>(meta via json.dump/argv)"]
+        subgraph Drivers["drivers/"]
+            DRVC["claude-driver.sh<br/>(--dangerously-skip-permissions<br/>+ DIDIO_DRIVER_DRYRUN dry-run hook)"]
+            DRVX["codex-driver.sh<br/>(--yolo + DIDIO_DRIVER_DRYRUN hook)"]
+            CONTRACT["DRIVER_CONTRACT.md<br/>(security posture documented)"]
+        end
+        GIT[".gitignore<br/>(logs/, *.meta.json,<br/>*.checkpoint.json)"]
+    end
+
+    subgraph Tests["Test layer"]
+        RUN["tests/run.sh<br/>(project test runner)"]
+        SIM["tests/lib/sim-harness.sh<br/>(echo-driver simulation)"]
+        F02T["F02 suites<br/>injection · meta · guardrails<br/>secrets · shellcheck · validate<br/>sim-dispatch · sim-parallel · spawn-meta"]
+    end
+
+    subgraph Global["Global install (~/.claude-didio-config) — read-only ref"]
+        RW["didio run-wave<br/>(Wave parallelism, test gate,<br/>checkpoint/resume)"]
+    end
+
+    CONF --> CFG
+    CFG --> SPAWN
+    SPAWN --> DRVC
+    SPAWN --> DRVX
+    DRVC -.security boundary.-> CONTRACT
+    DRVX -.security boundary.-> CONTRACT
+
+    RUN --> F02T
+    F02T --> SIM
+    SIM --> SPAWN
+
+    RW -."documented in feature-workflow.md".-> SPAWN
+    GIT -."prevents secret leaks".-> SPAWN

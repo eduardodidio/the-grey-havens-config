@@ -13,20 +13,39 @@
 # byte-for-byte, which DOES pass --effort (when DIDIO_EFFORT is set) and
 # --allowedTools. (The F01 plan was written against an older snapshot that
 # lacked these flags; preserving today's real behavior is what AC3 requires.)
+#
+# Dry-run mode: when DIDIO_DRIVER_DRYRUN is set (non-empty), the driver
+# prints the resolved command as NDJSON and exits 0 without invoking claude.
+# Default (unset): normal behavior (no observable change to real invocation).
 
 set -uo pipefail
 
+# Build the command line for introspection and dry-run logging
+CMD_PARTS=(
+  claude
+  -p "$DIDIO_PROMPT"
+  --output-format stream-json
+  --verbose
+)
+[[ -n "${DIDIO_MODEL:-}" ]] && CMD_PARTS+=(--model "$DIDIO_MODEL")
+[[ -n "${DIDIO_FALLBACK:-}" ]] && CMD_PARTS+=(--fallback-model "$DIDIO_FALLBACK")
+[[ -n "${DIDIO_EFFORT:-}" ]] && CMD_PARTS+=(--effort "$DIDIO_EFFORT")
+CMD_PARTS+=(
+  --dangerously-skip-permissions
+  --allowedTools "Edit Write MultiEdit Read Bash Glob Grep"
+)
+
+if [[ -n "${DIDIO_DRIVER_DRYRUN:-}" ]]; then
+  # Dry-run: print the command and exit without invoking claude
+  CMD_STR="${CMD_PARTS[*]}"
+  printf '{"type":"system","subtype":"driver-dryrun","provider":"claude","command":"%s"}\n' \
+    "${CMD_STR//\"/\\\"}" >> "$DIDIO_LOG_FILE"
+  exit 0
+fi
+
+# Normal mode: invoke the command and capture exit code
 set +e
-claude \
-  -p "$DIDIO_PROMPT" \
-  --output-format stream-json \
-  --verbose \
-  ${DIDIO_MODEL:+--model "$DIDIO_MODEL"} \
-  ${DIDIO_FALLBACK:+--fallback-model "$DIDIO_FALLBACK"} \
-  ${DIDIO_EFFORT:+--effort "$DIDIO_EFFORT"} \
-  --dangerously-skip-permissions \
-  --allowedTools "Edit Write MultiEdit Read Bash Glob Grep" \
-  > "$DIDIO_LOG_FILE" 2>&1
+"${CMD_PARTS[@]}" > "$DIDIO_LOG_FILE" 2>&1
 EXIT_CODE=$?
 set -e
 

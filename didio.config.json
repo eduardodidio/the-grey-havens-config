@@ -4,8 +4,13 @@
   "highlander": false,
   "max_parallel": 0,
   "providers": {
-    "claude": { "bin": "claude", "default": true },
-    "codex": { "bin": "codex" }
+    "claude": {
+      "bin": "claude",
+      "default": true
+    },
+    "codex": {
+      "bin": "codex"
+    }
   },
   "models": {
     "architect": {
@@ -41,6 +46,10 @@
       "model": "sonnet",
       "fallback": "haiku",
       "effort": "medium"
+    },
+    "narrative-designer": {
+      "model": "sonnet",
+      "fallback": "haiku"
     },
     "t800": {
       "model": "opus",
@@ -87,6 +96,10 @@
     "t1000": {
       "model": "sonnet",
       "fallback": "haiku"
+    },
+    "narrative-designer": {
+      "model": "haiku",
+      "fallback": "haiku"
     }
   },
   "retrospective": {
@@ -120,8 +133,15 @@
     "enabled": false
   },
   "meta_agents": {
-    "t800": { "enabled": false, "auto_governance": true },
-    "t1000": { "enabled": false, "review_mode": "post-decision", "escalation_blocks_pipeline": true }
+    "t800": {
+      "enabled": false,
+      "auto_governance": true
+    },
+    "t1000": {
+      "enabled": false,
+      "review_mode": "post-decision",
+      "escalation_blocks_pipeline": true
+    }
   },
   "research": {
     "web_search_budget": 5,
