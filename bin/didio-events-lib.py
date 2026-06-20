@@ -98,7 +98,9 @@ def _map_claude_event(ev):
 
 # ── Codex mapper ─────────────────────────────────────────────────────────
 _CODEX_ERROR_ITEM_TYPES = {"error"}
-_CODEX_TOOL_ITEM_TYPES = {"command_execution", "mcp_tool_call", "file_change", "web_search", "reasoning"}
+# NOTE: "reasoning" is intentionally NOT here — it has no Claude analogue and
+# degrades to kind="raw" (category preserved) via the fallback, per AC4.
+_CODEX_TOOL_ITEM_TYPES = {"command_execution", "mcp_tool_call", "file_change", "web_search"}
 
 
 def _map_codex_event(ev):

@@ -48,8 +48,10 @@ done < <(git -C "$ROOT" ls-files 2>/dev/null || true)
 
 MATCHED_SECRETS=()
 for file in "${TRACKED_FILES[@]}"; do
-  # Skip excluded directories
-  if [[ "$file" =~ ^(tests/fixtures/|docs/|_brief/) ]]; then
+  # Skip excluded directories and documentation. `tasks/` holds markdown task
+  # specs (documentation, like docs/); this scanner itself defines the patterns
+  # as literal strings and would self-match — neither contains real secrets.
+  if [[ "$file" =~ ^(tests/fixtures/|tests/F02-secrets-scan\.sh|docs/|tasks/|_brief/) ]]; then
     continue
   fi
 

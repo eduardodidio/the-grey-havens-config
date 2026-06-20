@@ -69,8 +69,8 @@ LOG_FILE="$(ls "$TMP"/logs/agents/F01-developer-task-*.jsonl 2>/dev/null | head 
 META_FILE="${LOG_FILE%.jsonl}.meta.json"
 
 assert_eq "happy path: exit code 0" "0" "$EXIT_CODE"
-assert_contains "happy path: echo-driver wrote NDJSON" "$(cat "$LOG_FILE" 2>/dev/null)" '"type":"echo"'
-assert_contains "happy path: echo-driver saw role/feature/task" "$(cat "$LOG_FILE" 2>/dev/null)" '"role":"developer","feature":"F01","task_id":"task"'
+assert_contains "happy path: echo-driver wrote NDJSON" "$(cat "$LOG_FILE" 2>/dev/null)" '"subtype":"echo-driver"'
+assert_contains "happy path: echo-driver saw role/feature/task" "$(cat "$LOG_FILE" 2>/dev/null)" '"role":"developer","feature":"F01","task":"task"'
 PROVIDER_META="$(python3 -c "import json; print(json.load(open('$META_FILE')).get('provider'))" 2>/dev/null)"
 STATUS_META="$(python3 -c "import json; print(json.load(open('$META_FILE')).get('status'))" 2>/dev/null)"
 assert_eq "happy path: meta provider == echo" "echo" "$PROVIDER_META"
@@ -146,7 +146,7 @@ cat > "$TMP/didio.config.json" <<'JSON'
 }
 JSON
 
-( cd "$TMP" && DIDIO_ECHO_EXIT_CODE=1 "$SPAWN" developer F01 task.md "extra" >/dev/null 2>&1 )
+( cd "$TMP" && ECHO_DRIVER_EXIT=1 "$SPAWN" developer F01 task.md "extra" >/dev/null 2>&1 )
 EXIT_CODE=$?
 
 LOG_FILE="$(ls "$TMP"/logs/agents/F01-developer-task-*.jsonl 2>/dev/null | head -n1)"

@@ -116,3 +116,27 @@ Security audit and remediation across the full framework:
 
 Architecture decision: `docs/adr/0004-framework-hardening.md`.
 Diagrams: `docs/diagrams/F02-architecture.mmd` / `docs/diagrams/F02-journey.mmd`.
+
+## F03 — Test reconciliation
+
+Pre-existing F01 failures surfaced by the F02 test runner, reconciled against
+the canonical driver contract (tests follow the contract, not the reverse):
+
+- **Dispatch test aligned to the driver:** `tests/F01-spawn-dispatch.sh` now
+  asserts the canonical echo-driver schema (`subtype:echo-driver`, field `task`)
+  and uses the canonical exit variable `ECHO_DRIVER_EXIT` (the old
+  `DIDIO_ECHO_EXIT_CODE` never triggered the failure path). No production or
+  driver changes — exit-code propagation in `bin/didio-spawn-agent.sh` was
+  verified already correct.
+- **Codex mapper matches its contract:** `bin/didio-events-lib.py` no longer
+  lists `reasoning` as a tool item; with no Claude analogue it degrades to
+  `kind="raw"` (category preserved), per the module docstring. The other 12
+  `bin/test_didio_events.py` cases stay green.
+- **Secrets scan false-positive fix:** `tests/F02-secrets-scan.sh` excludes the
+  scanner itself and the `tasks/` spec docs, which documented the literal
+  pattern strings and self-matched. Detection over code/config is unchanged.
+
+Result: `bash tests/run.sh` → **14 passed, 0 failed**.
+
+Architecture decision: `docs/adr/0005-tests-follow-canonical-driver-contract.md`.
+Diagrams: `docs/diagrams/F03-architecture.mmd` / `docs/diagrams/F03-journey.mmd`.
