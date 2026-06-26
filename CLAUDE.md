@@ -6,7 +6,16 @@ Framework: [claude-didio-config](https://github.com/eduardodidio/claude-didio-co
 
 ## Mission
 
-TBD — fill in after kickoff.
+Reference / dogfooding project for the
+[claude-didio-config](https://github.com/eduardodidio/claude-didio-config)
+framework. It exercises the framework's multi-provider orchestration
+(Architect → Developer → TechLead → QA Waves, the `drivers/` execution layer,
+and neutral skill-compile) end-to-end against a real codebase, and is the one
+consumer project that carries a real shell test suite (`tests/run.sh`) as the
+quality gate. Features here harden the framework itself rather than ship an
+application: F01 (multi-provider, implemented upstream), F02 (security/test
+hardening), F03 (test reconciliation), F04–F07 (review follow-ups). The repo
+has no application stack — its product is a green, well-documented framework.
 
 ## Architecture
 
