@@ -1,9 +1,18 @@
 # Feature F01 — Multi-model evolution: Claude + Codex providers + unified skill management
 
-**Status:** planned
+**Status:** implemented upstream (framework) — PLAN_ONLY in this repo
 **Owner:** @eduardodidio
-**Mode:** PLAN_ONLY (Architect plan only — no execution)
+**Mode:** PLAN_ONLY (Architect plan only — no execution in this repo)
 **PRD / brief:** [`_brief/00-overview.md`](./_brief/00-overview.md)
+
+> **Where F01 actually lives.** F01 targets the **framework install**
+> (`${DIDIO_HOME:-~/.claude-didio-config}`), where it was implemented and
+> validated (QA: 14/14 F01 suites, all 5 ACs — see `qa-report-20260614.md`).
+> In **this** consumer repo the feature is **PLAN_ONLY**: the artifacts you
+> see here (`drivers/`, `bin/`, `tests/F01-*`, `didio.config.json` providers
+> block) are **inherited scaffold** from the framework, not a separate
+> execution. There are no F01 Waves to run here. F02/F03/F04 (which *were*
+> executed in this repo) build on top of that scaffold.
 
 ## Goal
 
