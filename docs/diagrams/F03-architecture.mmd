@@ -1,0 +1,18 @@
+flowchart TD
+    subgraph contract["Canonical sources (UNCHANGED)"]
+        DRV["drivers/echo-driver.sh<br/>type:system / subtype:echo-driver<br/>field: task / exit: ECHO_DRIVER_EXIT"]
+        SPAWN["bin/didio-spawn-agent.sh<br/>EXIT_CODE=$? -> status/exit_code<br/>(propagation verified correct)"]
+        CONTRACT["drivers/DRIVER_CONTRACT.md"]
+    end
+    subgraph fixes["F03 fixes"]
+        T2["tests/F01-spawn-dispatch.sh<br/>assert subtype:echo-driver, task,<br/>ECHO_DRIVER_EXIT=1"]
+        T3["bin/didio-events-lib.py<br/>remove reasoning from tool-set<br/>-> kind:raw category:reasoning"]
+        SCAN["tests/F02-secrets-scan.sh<br/>exclude scanner + tasks/ (docs)<br/>stop self-matching pattern strings"]
+    end
+    DRV --> T2
+    CONTRACT --> T2
+    SPAWN --> T2
+    T3 -->|"12 other tests stay green"| TESTS["bin/test_didio_events.py (13/13)"]
+    T2 --> RUN["bash tests/run.sh -> 14 passed / 0 failed"]
+    T3 --> RUN
+    SCAN --> RUN

@@ -1,0 +1,41 @@
+%% F02 — Framework Hardening: maintainer journey (audit → remediate → validate)
+%% Swimlanes: Maintainer / Pipeline (didio) / Quality gate (tests)
+
+flowchart TD
+    subgraph Maintainer["👤 Maintainer"]
+        M_START(["Wants: hardened framework"])
+        M_FIX["Fix finding / re-run"]
+        M_END(["End: green suite, docs in sync"])
+    end
+
+    subgraph Pipeline["🖥️ Pipeline (didio)"]
+        P_W0["Wave 0: test runner + shellcheck baseline + sim-harness fixtures"]
+        P_W1["Wave 1: remediations in parallel\n(injection fix · driver guardrails · secrets/.gitignore\nshellcheck · config validation · sim suite · flow docs)"]
+        P_W2["Wave 2: spawn-meta simulation suite\n(resolution · lifecycle · failure path · parallelism · isolation)"]
+        P_W3["Wave 3: architecture diagram + ADR + README note + journey diagram"]
+    end
+
+    subgraph Gate["✅ Quality gate (tests/run.sh)"]
+        G_W0{"Wave 0 gate\ntests/run.sh green?"}
+        G_W1{"Wave 1 gate\ntests/run.sh green?"}
+        G_W2{"Wave 2 gate\ntests/run.sh green?"}
+        G_W3{"Wave 3 gate\ntests/run.sh green?"}
+    end
+
+    M_START --> P_W0
+    P_W0 --> G_W0
+    G_W0 -->|"no — fix & re-run"| M_FIX
+    M_FIX --> P_W0
+
+    G_W0 -->|yes| P_W1
+    P_W1 --> G_W1
+    G_W1 -->|"no — fix & re-run"| M_FIX
+
+    G_W1 -->|yes| P_W2
+    P_W2 --> G_W2
+    G_W2 -->|"no — fix & re-run"| M_FIX
+
+    G_W2 -->|yes| P_W3
+    P_W3 --> G_W3
+    G_W3 -->|"no — fix & re-run"| M_FIX
+    G_W3 -->|yes| M_END

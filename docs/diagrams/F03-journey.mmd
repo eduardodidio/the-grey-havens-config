@@ -1,0 +1,8 @@
+flowchart LR
+    A["run.sh: 11 passed / 3 failed"] --> B["Wave 0: root-cause audit (T01)"]
+    B --> C{"prod bug?"}
+    C -->|"no (exit propagation OK)"| D["Wave 1: align test (T02) + fix mapper (T03)"]
+    C -->|"yes"| E["flag extra prod task"]
+    D --> S["Fix secrets-scan self-match (scanner + tasks/ excluded)"]
+    S --> F["Wave 2: diagrams + ADR + README (T04)"]
+    F --> G["run.sh: 14 passed / 0 failed"]

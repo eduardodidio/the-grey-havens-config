@@ -62,8 +62,9 @@ record the assumption you made in a comment inside the task file (append a
   Wave. Do **not** read the individual task files of Wave N-1.
 - If absent (e.g. Wave 0 → 1, or summary generation failed), proceed
   without it — do not block.
-- The `EXTRA` prompt injected by the invoker (run-wave.sh) will also
-  reference the summary; this instruction is the agent-side counterpart.
+- The `EXTRA` prompt injected by the invoker (via `didio run-wave`, provided by
+  the global install) will also reference the summary; this instruction is the
+  agent-side counterpart.
 
 ### 3. Memory access
 

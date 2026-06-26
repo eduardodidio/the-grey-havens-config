@@ -15,9 +15,9 @@ your project conventions.
 
 ## Commands
 
-- **Build:** `echo 'configure build command in CLAUDE.md'`
-- **Test:** `echo 'configure test command in CLAUDE.md'`
-- **Run:** `echo 'configure run command in CLAUDE.md'`
+- **Build:** `bash tests/F02-shellcheck.sh` (lint; no compiled artifact — skips gracefully if shellcheck absent)
+- **Test:** `bash tests/run.sh`
+- **Run:** `didio <subcommand>` (global install at `~/.local/bin/didio`)
 
 ## Agent Workflow
 
