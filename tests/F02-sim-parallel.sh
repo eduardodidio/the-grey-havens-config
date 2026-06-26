@@ -223,9 +223,15 @@ JSON
 TASK_ISO="$TMP/F02-task-isolation.md"
 cp "$FIXTURE" "$TASK_ISO"
 
-# Export canary so it exists in the parent environment — the test below must
-# prove it doesn't reach the driver when spawn-agent is invoked cleanly.
+# Export canaries so they exist in the parent environment — the tests below must
+# prove they don't reach the driver when spawn-agent is invoked cleanly. Besides
+# the generic LEAK_CANARY, we plant credential-SHAPED names so the test machine-
+# verifies the DRIVER_CONTRACT.md claim that sensitive env vars are not forwarded
+# (not just that an arbitrary var is stripped).
 export LEAK_CANARY=should_not_appear
+export AWS_SECRET_ACCESS_KEY=should_not_appear
+export GITHUB_TOKEN=should_not_appear
+export SSH_AUTH_SOCK=/tmp/should_not_appear.sock
 
 ISO_SENTINEL="$(mktemp "$P_ISO/logs/agents/.sentinel.XXXXXX")"
 
@@ -267,6 +273,35 @@ PY
     echo "ok - isolation: LEAK_CANARY absent from driver env"
   else
     echo "FAIL - isolation: LEAK_CANARY leaked into driver env"
+    FAILURES=$((FAILURES + 1))
+  fi
+
+  # Credential-shaped vars must also be absent (machine-verifies the
+  # DRIVER_CONTRACT.md "sensitive env vars are not exported" claim — TL-07).
+  python3 - "$ISO_LOG" <<'PY'
+import json, sys
+SENSITIVE = {"AWS_SECRET_ACCESS_KEY", "GITHUB_TOKEN", "SSH_AUTH_SOCK"}
+with open(sys.argv[1]) as f:
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if entry.get("subtype") == "probe-driver":
+            leaked = SENSITIVE & set(entry.get("env_keys", []))
+            if leaked:
+                print(",".join(sorted(leaked)), file=sys.stderr)
+                sys.exit(1)
+            sys.exit(0)
+sys.exit(0)
+PY
+  if [[ $? -eq 0 ]]; then
+    echo "ok - isolation: credential-shaped vars absent from driver env"
+  else
+    echo "FAIL - isolation: credential-shaped var leaked into driver env"
     FAILURES=$((FAILURES + 1))
   fi
 
@@ -318,7 +353,7 @@ PY
   fi
 fi
 
-unset LEAK_CANARY
+unset LEAK_CANARY AWS_SECRET_ACCESS_KEY GITHUB_TOKEN SSH_AUTH_SOCK
 
 # ---------------------------------------------------------------------------
 # Summary
