@@ -18,3 +18,9 @@ Living Mermaid diagrams. Kept in sync with code by the Developer and
 verified by QA.
 
 - [`diagrams/`](./diagrams/) — all diagrams
+
+## Review follow-ups
+
+- [`review-followups.md`](./review-followups.md) — open backlog from the
+  full-project review: stale framework install (pre-F01), deferred T4/T5
+  tests, and the `TBD` Mission.
