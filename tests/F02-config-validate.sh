@@ -11,6 +11,9 @@ set -euo pipefail
 #   5. Every spawned role with a prompt has a models entry (or is explicitly exempted)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Absolute path to THIS script, resolved from BASH_SOURCE so the self-call below
+# works even when the file is `source`d (where $0 would be the shell, not us).
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 CONFIG="${1:-$ROOT/didio.config.json}"
 
 VIOLATIONS=0
@@ -28,7 +31,7 @@ test_broken_config() {
   trap "rm -f '$tmp_broken'" RETURN
 
   # Should fail
-  if bash "$0" "$tmp_broken" 2>/dev/null; then
+  if bash "$SELF" "$tmp_broken" 2>/dev/null; then
     VIOLATIONS=$((VIOLATIONS + 1))
     REPORT+=$'\n'"Error check FAILED: expected validation to reject broken config ($desc), but it passed"
   fi

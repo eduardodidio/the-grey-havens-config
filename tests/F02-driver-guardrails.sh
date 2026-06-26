@@ -240,10 +240,13 @@ unset DIDIO_DRIVER_DRYRUN
 LOG_FILE_NORMAL="$STUB_DIR/normal.jsonl"
 export DIDIO_LOG_FILE="$LOG_FILE_NORMAL"
 
-# Mock claude that outputs NDJSON and exits 0
+# Mock claude that outputs NDJSON and exits 0. Write to STDOUT (not "$1"): the
+# driver invokes `claude -p "$PROMPT" ...`, so $1 is the literal "-p" flag —
+# `> "$1"` used to create a stray ./-p file in the repo root. The driver itself
+# redirects stdout to $DIDIO_LOG_FILE, so stdout is the correct sink.
 cat > "$STUB_DIR/claude" <<'EOF'
 #!/usr/bin/env bash
-echo '{"type":"system","subtype":"init"}' > "$1"
+echo '{"type":"system","subtype":"init"}'
 exit 0
 EOF
 
