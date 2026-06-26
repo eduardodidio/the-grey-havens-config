@@ -1,10 +1,11 @@
 %% F02 — Framework Hardening: maintainer journey (audit → remediate → validate)
 %% Swimlanes: Maintainer / Pipeline (didio) / Quality gate (tests)
+%% NOTE: on a failed gate, resume re-runs ONLY the failed Wave (not Wave 0).
+%%       Each "no — fix & re-run" edge loops back to its own Wave accordingly.
 
 flowchart TD
     subgraph Maintainer["👤 Maintainer"]
         M_START(["Wants: hardened framework"])
-        M_FIX["Fix finding / re-run"]
         M_END(["End: green suite, docs in sync"])
     end
 
@@ -24,18 +25,18 @@ flowchart TD
 
     M_START --> P_W0
     P_W0 --> G_W0
-    G_W0 -->|"no — fix & re-run"| M_FIX
-    M_FIX --> P_W0
+    %% A failed gate re-runs ONLY its own Wave (resume semantics), not Wave 0.
+    G_W0 -->|"no — fix & re-run Wave 0"| P_W0
 
     G_W0 -->|yes| P_W1
     P_W1 --> G_W1
-    G_W1 -->|"no — fix & re-run"| M_FIX
+    G_W1 -->|"no — fix & re-run Wave 1"| P_W1
 
     G_W1 -->|yes| P_W2
     P_W2 --> G_W2
-    G_W2 -->|"no — fix & re-run"| M_FIX
+    G_W2 -->|"no — fix & re-run Wave 2"| P_W2
 
     G_W2 -->|yes| P_W3
     P_W3 --> G_W3
-    G_W3 -->|"no — fix & re-run"| M_FIX
+    G_W3 -->|"no — fix & re-run Wave 3"| P_W3
     G_W3 -->|yes| M_END
