@@ -1,13 +1,21 @@
 # Review follow-ups & backlog
 
-Tracked outcomes of the full-project review (2026-06-26). The four MINOR
+Tracked outcomes of the full-project review (2026-06-26..27). The four MINOR
 TechLead findings from the F02 review (TL-04/05/06/07) were **closed and merged**
-(PRs #2, #3). This file tracks the two items that remain — one is a real
-environment gap, the other a pair of deferred tests that depend on it.
+(PRs #2, #3). **As of 2026-06-27 every item below is also closed** — kept here
+as a record. Summary: install gap fixed, T4/T5 confirmed already covered
+upstream, a real upstream `run-wave` bug fixed as a side effect, Mission filled.
 
-## FINDING — active framework install is stale (pre-F01)
+## FINDING — active framework install is stale (pre-F01) — ✅ RESOLVED
 
 **Severity: MEDIUM (docs promise commands the installed binary does not have).**
+
+> **RESOLVED 2026-06-27.** `~/.local/bin/didio` was re-pointed to the F01 source
+> repo (`ln -sf ~/claude-didio-config/bin/didio ~/.local/bin/didio`); `~/.zshrc`
+> already exported `DIDIO_HOME=~/claude-didio-config`. `didio providers list/
+> validate` and `didio compile-skills` now resolve and pass. The dotted
+> install's 2 unpushed local commits were left intact (see "orphan commits"
+> below). Revert: `ln -sf ~/.claude-didio-config/bin/didio ~/.local/bin/didio`.
 
 There are **two** framework directories in `$HOME`:
 
@@ -41,25 +49,40 @@ confirmed by the maintainer; this is an infra change outside this repo):
 Until then, `providers` / `compile-skills` are documented-but-not-runnable in
 this environment.
 
-## DEFERRED — T4 / T5 (blocked on the finding above)
+## T4 / T5 — ✅ CLOSED (already covered upstream, verified 2026-06-27)
 
-From the review test plan; **cannot be implemented as in-repo tests** because
-the production code they exercise lives in the framework, not in this consumer
-repo (`bin/` here holds only `didio-config-lib.sh`, `didio-events-lib.py`,
-`didio-spawn-agent.sh` — no `run-wave`, `compile-skills`, or `providers`). This
-is consistent with F01 being **upstream-only** here (see
-`tasks/features/F01-multi-model-providers/F01-README.md`).
+These cannot — and need not — be in-repo tests: the production code lives in the
+framework, not this consumer repo (`bin/` here holds only `didio-config-lib.sh`,
+`didio-events-lib.py`, `didio-spawn-agent.sh`). Investigating the framework
+(`~/claude-didio-config`) showed **both are already covered there and green**, so
+porting them would be redundant:
 
-- **T4 — resume re-runs only the failed Wave.** Needs `didio run-wave`'s
-  resume logic, which lives in the framework. Best home: a test in
-  `~/claude-didio-config`, not here. The F02 journey diagram was already
-  corrected to reflect the intended semantics (TL-06).
-- **T5 — smoke `didio compile-skills` / `didio providers` against this repo's
-  config.** Blocked until the active install carries F01 (see finding). Once
-  installed, a thin smoke test here could assert both subcommands resolve and
-  `providers validate` passes for this Claude-only config.
+- **T5 — `compile-skills` / `providers` smoke** → covered by
+  `tests/F01-cli-subcommands.sh` ("smoke tests for the `didio compile-skills` and
+  `didio providers` subcommands"), `F01-compile-claude.sh`, `F01-compile-codex.sh`,
+  `F01-preflight.sh`. All pass.
+- **T4 — resume re-runs only the failed/pending tasks** → the resume model is
+  `logs/agents/_pending/`-based (`didio resume-pending` re-spawns only pending
+  jobs), covered by `tests/F07-pause-resume-e2e.sh`, `F22-e2e-smoke.sh`,
+  `F22-idempotency.sh`. All pass.
 
-## OPEN — Mission still `TBD`
+## Orphan commits on the dotted install — ✅ RESOLVED (not cherry-picked)
 
-`CLAUDE.md` Mission reads `TBD — fill in after kickoff`. Needs the maintainer's
-input (project purpose beyond dogfooding the framework); not derivable from code.
+The dotted install `~/.claude-didio-config` carried 2 unpushed local commits
+(`333ae5c` run-wave DIDIO_HOME fix, `1f780a5` sync(F16)). Investigation:
+
+- `1f780a5` sync(F16) is **superseded** — the source tree (F01/F27) already has
+  newer versions of every file it touched; cherry-picking would regress them.
+- `333ae5c`'s one-line fix targeted a line the F01 refactor removed, but its
+  intent (guard bare `$DIDIO_HOME` under `set -u`) revealed a **still-present
+  upstream bug**: `bin/didio-run-wave.sh` ran `set -euo pipefail` yet used bare
+  `"$DIDIO_HOME"` at the post-Wave summary, crashing with "unbound variable"
+  when `DIDIO_HOME` was unexported. Fixed fresh upstream via a single
+  top-level normalization — **claude-didio-config PR #2 (`fd29f25`)**, merged
+  2026-06-27. The orphan commits themselves were left intact on the dotted
+  install (not deleted) but are obsolete and were not cherry-picked.
+
+## Mission — ✅ DONE
+
+`CLAUDE.md` Mission was filled (PR #5, `562d068`): the-grey-havens-config is the
+reference / dogfooding project for the framework.
