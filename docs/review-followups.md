@@ -86,3 +86,22 @@ The dotted install `~/.claude-didio-config` carried 2 unpushed local commits
 
 `CLAUDE.md` Mission was filled (PR #5, `562d068`): the-grey-havens-config is the
 reference / dogfooding project for the framework.
+
+## Framework test-suite hygiene — ✅ DONE (claude-didio-config PR #3, `96fcbd2`)
+
+Running the framework's 54 `tests/*.sh` showed 47 pass / 5 fail / 2 timeout, but
+triage proved **none of the 7 are bugs** — they have skip/arg/infra contracts a
+naive `bash tests/*.sh` loop ignores:
+
+- `F12-wave-summary-smoke` — passes; only fails **inside a sandbox** that blocks
+  writes to `tasks/` (an agent-harness constraint, not a test issue).
+- `F06-integration-test`, `F07-pause-resume-e2e`, `F10-readiness-smoke`,
+  `F13-tea-e2e` — **e2e**: need live `claude` auth or are SIGTERM/PID-timing
+  sensitive.
+- `F13-tea-smoke` — **parametrized helper** (requires positional args).
+- `F07-budget-smoke` — needs **`ccusage`** (external tool, not installed).
+
+Fix: added `tests/run.sh` to the framework — runs the pure suite to green and
+skips the e2e / infra / param tests by default with a printed reason (opt in via
+`DIDIO_RUN_E2E=1`). Result un-sandboxed: **48 passed, 0 failed, 6 skipped**.
+This mirrors the green-gate runner this consumer repo already has.
